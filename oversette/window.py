@@ -14,6 +14,12 @@ LANGLIST = {'Icelandic': 'is', 'Norwegian': 'no', 'Swedish': 'sv', 'Danish': 'da
 'Greek': 'el', 'Turkish': 'tr'}
 
 
+STYLESHEET = """
+    QWidget {
+        background-image: url("oversette/resources/paper.jpg") repeat stretch stretch;
+    }
+"""
+
 class External(qtcore.QObject):
    finished = qtcore.pyqtSignal()
    converted = qtcore.pyqtSignal(str)
@@ -29,26 +35,29 @@ class External(qtcore.QObject):
 class Window(qtwidgets.QMainWindow):
    def __init__(self, parent = None):
       super().__init__(parent)
-      self.resize(1250, 600)
+      self.settings = qtcore.QSettings('Alliot', 'Overseleser')
+      self.resize(self.settings.value("size", qtcore.QSize(1250, 600)))
+      self.move(self.settings.value("pos", qtcore.QPoint(50, 50)))
       wid = qtwidgets.QWidget(self)
       self.setCentralWidget(wid)
       grid = qtwidgets.QGridLayout()
       wid.setLayout(grid)
 
       self.setWindowTitle("Overseleser")
-      self.setWindowIcon(qtgui.QIcon('oversette/icons/book.png'))
+      self.setWindowIcon(qtgui.QIcon('oversette/resources/icons/book.png'))
       self._createActions()
       self._createMenuBar()
       self._createToolBars()
+
+      fontId = qtgui.QFontDatabase.addApplicationFont("oversette/resources/maiola.ttf")
+      if fontId < 0:
+         print('font not loaded')
+      families = qtgui.QFontDatabase.applicationFontFamilies(fontId)
       self.textarea = qtwidgets.QPlainTextEdit(self)
-      # self.textarea.move(10, 60)
-      # self.textarea.resize(900, 530)
-      # self.textarea.setReadOnly(True)
+      self.textarea.setStyleSheet(STYLESHEET)
       self.translation = qtwidgets.QPlainTextEdit(self)
       grid.addWidget(self.translation, 1, 2, 1, 3)
       grid.addWidget(self.textarea, 1, 1)
-      # self.translation.move(920, 60)
-      # self.translation.resize(320, 530)
       self.translation.setReadOnly(True)
       self._createContextMenu()
       self.path = None
@@ -56,7 +65,7 @@ class Window(qtwidgets.QMainWindow):
       self._getsaved()
       if not self.font:
          self.font = 12
-      f = qtgui.QFont('Times', self.font)
+      f = qtgui.QFont(families[0], self.font)
       self.textarea.setFont(f)
       self.translation.setFont(f)
 
@@ -85,19 +94,19 @@ class Window(qtwidgets.QMainWindow):
       self.openAction.setText('&Open')
       self.openAction.setShortcut(qtgui.QKeySequence.Open)
       self.openAction.triggered.connect(self.openFile)
-      self.openAction.setIcon(qtgui.QIcon('oversette/icons/open.ico'))
+      self.openAction.setIcon(qtgui.QIcon('oversette/resources/icons/open.ico'))
 
       self.closeAction = qtwidgets.QAction('&Close')
       self.closeAction.setText('&Close')
       self.closeAction.setShortcut(qtgui.QKeySequence('Ctrl+W'))
       self.closeAction.triggered.connect(self.closeFile)
-      self.closeAction.setIcon(qtgui.QIcon('oversette/icons/close.png'))
+      self.closeAction.setIcon(qtgui.QIcon('oversette/resources/icons/close.png'))
 
       self.copyAction = qtwidgets.QAction('&Copy')
       self.copyAction.setText('&Copy')
       self.copyAction.triggered.connect(self.copypaste)
       self.copyAction.setShortcut(qtgui.QKeySequence.Copy)
-      self.copyAction.setIcon(qtgui.QIcon('oversette/icons/copy.png'))
+      self.copyAction.setIcon(qtgui.QIcon('oversette/resources/icons/copy.png'))
 
       self.sizepAction = qtwidgets.QAction('&Font size +')
       self.sizepAction.setText('&Font size +')
@@ -113,18 +122,18 @@ class Window(qtwidgets.QMainWindow):
       self.saveAction.setText('&Bookmark')
       self.saveAction.setShortcut(qtgui.QKeySequence.Save)
       self.saveAction.triggered.connect(self.save)
-      self.saveAction.setIcon(qtgui.QIcon('oversette/icons/bookmark.png'))
+      self.saveAction.setIcon(qtgui.QIcon('oversette/resources/icons/bookmark.png'))
 
       self.convertAction = qtwidgets.QAction('&Convert')
       self.convertAction.setText('&Convert')
       self.convertAction.triggered.connect(self.saveastxt)
-      self.convertAction.setIcon(qtgui.QIcon('oversette/icons/convert.png'))
+      self.convertAction.setIcon(qtgui.QIcon('oversette/resources/icons/convert.png'))
 
       self.translAction = qtwidgets.QAction('&Translate')
       self.translAction.setText('&Translate')
       self.translAction.triggered.connect(self.translate)
       self.translAction.setShortcut(qtgui.QKeySequence('Ctrl+T'))
-      self.translAction.setIcon(qtgui.QIcon('oversette/icons/google.png'))
+      self.translAction.setIcon(qtgui.QIcon('oversette/resources/icons/google.png'))
 
    def _createContextMenu(self):
       self.textarea.setContextMenuPolicy(qtcore.Qt.ActionsContextMenu)
@@ -236,3 +245,10 @@ class Window(qtwidgets.QMainWindow):
       self.path = f'books/{os.path.splitext(os.path.basename(self.path))[0]}.txt'
       with open(self.path, 'w', encoding='utf8') as file:
          file.write(text)
+
+   def closeEvent(self, e):
+       # Write window size and position to config file
+      self.settings.setValue("size", self.size())
+      self.settings.setValue("pos", self.pos())
+
+      e.accept()
