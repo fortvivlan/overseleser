@@ -1,4 +1,4 @@
-# Overseleser 0.9
+# Overseleser 0.95
 
 (Oversette + leser)
 
@@ -33,8 +33,11 @@ This is a small GUI program to read books in foreign languages and to get intera
 - open .djvu and .pdf with pics. I would have to do OCR for that...
 - change font family (I was too lazy to find out how to add custom fonts, but I may do so in future)
 - open .doc (who the f*ck uses .doc nowadays? Oh, and .rtf too, convert them yourselves)
-- you may resize the window, but subwindow sizes are hardcoded and will stay the same. I may change this in future, but for now I'm content with the current size, anyway
 
 ### Will there ever be an .exe version?
 
 I dunno, I'm too lazy
+
+#### Updates
+
+v.0.95 - fixed the bug with failed formats, made the window resizeable

@@ -22,14 +22,7 @@ class External(qtcore.QObject):
       global res
       opn = FileOpener(filepath)
       res = opn.ooopen()
-      if res == 'Encoding':
-         qtwidgets.QMessageBox.about(self, 'Error', 'Your encoding should be UTF-8')
-      elif res == 'PDF error':
-         qtwidgets.QMessageBox.about(self, 'Error', 'Couldn\'t open PDF')
-      elif res == 'Unknown':
-         qtwidgets.QMessageBox.about(self, 'Error', 'Sorry, Overseleser does not support this format')
-      else:
-         self.converted.emit(res)
+      self.converted.emit(res)
       self.finished.emit()
 
 
@@ -37,18 +30,25 @@ class Window(qtwidgets.QMainWindow):
    def __init__(self, parent = None):
       super().__init__(parent)
       self.resize(1250, 600)
+      wid = qtwidgets.QWidget(self)
+      self.setCentralWidget(wid)
+      grid = qtwidgets.QGridLayout()
+      wid.setLayout(grid)
+
       self.setWindowTitle("Overseleser")
       self.setWindowIcon(qtgui.QIcon('oversette/icons/book.png'))
       self._createActions()
       self._createMenuBar()
       self._createToolBars()
       self.textarea = qtwidgets.QPlainTextEdit(self)
-      self.textarea.move(10, 60)
-      self.textarea.resize(900, 530)
+      # self.textarea.move(10, 60)
+      # self.textarea.resize(900, 530)
       # self.textarea.setReadOnly(True)
       self.translation = qtwidgets.QPlainTextEdit(self)
-      self.translation.move(920, 60)
-      self.translation.resize(320, 530)
+      grid.addWidget(self.translation, 1, 2, 1, 3)
+      grid.addWidget(self.textarea, 1, 1)
+      # self.translation.move(920, 60)
+      # self.translation.resize(320, 530)
       self.translation.setReadOnly(True)
       self._createContextMenu()
       self.path = None
@@ -131,10 +131,17 @@ class Window(qtwidgets.QMainWindow):
       self.textarea.addAction(self.translAction)
 
    def _preparetext(self, res):
-      self.textarea.clear()
-      self.textarea.insertPlainText(res)
-      name = os.path.splitext(os.path.basename(self.path))[0]
-      self.setWindowTitle(f"Overseleser: {name}")
+      if res == 'Encoding':
+         qtwidgets.QMessageBox.about(self, 'Error', 'Your encoding should be UTF-8')
+      elif res == 'PDF error':
+         qtwidgets.QMessageBox.about(self, 'Error', 'Couldn\'t open PDF')
+      elif res == 'Unknown':
+         qtwidgets.QMessageBox.about(self, 'Error', 'Sorry, Overseleser does not support this format')
+      else:
+         self.textarea.clear()
+         self.textarea.insertPlainText(res)
+         name = os.path.splitext(os.path.basename(self.path))[0]
+         self.setWindowTitle(f"Overseleser: {name}")
 
    def createThread(self, filepath):
         thread = qtcore.QThread()
