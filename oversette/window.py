@@ -14,10 +14,16 @@ LANGLIST = {'Icelandic': 'is', 'Norwegian': 'no', 'Swedish': 'sv', 'Danish': 'da
 'Greek': 'el', 'Turkish': 'tr'}
 
 
-STYLESHEET = """
-    QWidget {
+STYLESHEET_TEXT = """
+   QWidget {
         background-image: url("oversette/resources/paper.jpg") repeat stretch stretch;
     }
+"""
+
+STYLESHEET_NOTE = """
+   QWidget {
+         background-image: url("oversette/resources/note.jpg") repeat stretch stretch;
+      }
 """
 
 class External(qtcore.QObject):
@@ -30,7 +36,6 @@ class External(qtcore.QObject):
       res = opn.ooopen()
       self.converted.emit(res)
       self.finished.emit()
-
 
 class Window(qtwidgets.QMainWindow):
    def __init__(self, parent = None):
@@ -45,6 +50,7 @@ class Window(qtwidgets.QMainWindow):
 
       self.setWindowTitle("Overseleser")
       self.setWindowIcon(qtgui.QIcon('oversette/resources/icons/book.png'))
+      self.setStyleSheet('background-color: #efeae1;')
       self._createActions()
       self._createMenuBar()
       self._createToolBars()
@@ -54,13 +60,23 @@ class Window(qtwidgets.QMainWindow):
          print('font not loaded')
       families = qtgui.QFontDatabase.applicationFontFamilies(fontId)
       self.textarea = qtwidgets.QPlainTextEdit(self)
-      self.textarea.setStyleSheet(STYLESHEET)
+      self.textarea.setStyleSheet(STYLESHEET_TEXT)
+      self.textarea.setReadOnly(True)
+      self.notearea = qtwidgets.QPlainTextEdit(self)
+      self.notearea.setStyleSheet(STYLESHEET_NOTE)
       self.translation = qtwidgets.QPlainTextEdit(self)
-      grid.addWidget(self.translation, 1, 2, 1, 3)
+      self.translation.setStyleSheet(STYLESHEET_NOTE)
+      self.filler = qtwidgets.QLabel('Label')
+      self.filler.setPixmap(qtgui.QPixmap("oversette/resources/book.png"))
+      self.filler.setAlignment(qtcore.Qt.AlignCenter)
+      grid.addWidget(self.translation, 1, 2, 1, 4)
       grid.addWidget(self.textarea, 1, 1)
+      grid.addWidget(self.notearea, 2, 1, 4, 1)
+      grid.addWidget(self.filler, 2, 2, 4, 4)
       self.translation.setReadOnly(True)
       self._createContextMenu()
       self.path = None
+      self.notes = ''
       self.font = None
       self._getsaved()
       if not self.font:
@@ -68,6 +84,8 @@ class Window(qtwidgets.QMainWindow):
       f = qtgui.QFont(families[0], self.font)
       self.textarea.setFont(f)
       self.translation.setFont(f)
+      self.notearea.setFont(f)
+      self.notearea.setPlainText(self.notes)
 
    def _createMenuBar(self):
       menuBar = self.menuBar()
@@ -78,14 +96,21 @@ class Window(qtwidgets.QMainWindow):
       editMenu = menuBar.addMenu('&Edit')
       editMenu.addAction(self.copyAction)
       editMenu.addAction(self.convertAction)
+      editMenu.addAction(self.delnoteAction)
       viewMenu = menuBar.addMenu('&View')
       viewMenu.addAction(self.sizepAction)
       viewMenu.addAction(self.sizemAction)
+      viewMenu.addAction(self.scrollAction)
 
    def _createToolBars(self):
       langToolBar = self.addToolBar("Language")
       self.combo = qtwidgets.QComboBox()
+      self.percentage = qtwidgets.QLabel('0')
+      spacer = qtwidgets.QWidget()
+      spacer.setSizePolicy(qtwidgets.QSizePolicy.Expanding, qtwidgets.QSizePolicy.Expanding)
       langToolBar.addWidget(self.combo)
+      langToolBar.addWidget(spacer)
+      langToolBar.addWidget(self.percentage)
       self.combo.insertItems(1, list(LANGLIST.keys()))
 
 
@@ -135,6 +160,17 @@ class Window(qtwidgets.QMainWindow):
       self.translAction.setShortcut(qtgui.QKeySequence('Ctrl+T'))
       self.translAction.setIcon(qtgui.QIcon('oversette/resources/icons/google.png'))
 
+      self.scrollAction = qtwidgets.QAction('&Update scroll percentage')
+      self.scrollAction.setText('&Update scroll percentage')
+      self.scrollAction.triggered.connect(self.scroll_percentage)
+      self.scrollAction.setShortcut(qtcore.Qt.Key_F5)
+
+      self.delnoteAction = qtwidgets.QAction('&Clear notes')
+      self.delnoteAction.setText('&Clear notes')
+      self.delnoteAction.triggered.connect(self.clearnotes)
+      self.delnoteAction.setShortcut(qtgui.QKeySequence.Delete)
+      self.delnoteAction.setIcon(qtgui.QIcon('oversette/resources/icons/delete.png'))
+
    def _createContextMenu(self):
       self.textarea.setContextMenuPolicy(qtcore.Qt.ActionsContextMenu)
       self.textarea.addAction(self.translAction)
@@ -170,17 +206,6 @@ class Window(qtwidgets.QMainWindow):
          self.thread = self.createThread(filepath)
          self.thread.start()
          self.path = filepath
-         # opn = FileOpener(filepath)
-         # res = opn.ooopen()
-         # if res == 'Encoding':
-         #    qtwidgets.QMessageBox.about(self, 'Error', 'Your encoding should be UTF-8')
-         # elif res == 'PDF error':
-         #    qtwidgets.QMessageBox.about(self, 'Error', 'Couldn\'t open PDF')
-         # elif res == 'Unknown':
-         #    qtwidgets.QMessageBox.about(self, 'Error', 'Sorry, Overseleser does not support this format')
-         # else:
-         #    self.path = filepath
-         #    self._preparetext(res)
 
    def closeFile(self):
       self.path = None
@@ -200,11 +225,21 @@ class Window(qtwidgets.QMainWindow):
    def copypaste(self):
       self.textarea.copy()
 
+   def clearnotes(self):
+      self.notes = ''
+      self.notearea.setPlainText(self.notes)
+
+   def scroll_percentage(self):
+      vsb = self.textarea.verticalScrollBar()
+      ratio = round((vsb.value() / (vsb.maximum() or 1)) * 100, 2)
+      self.percentage.setText(str(ratio))
+
    def _getsaved(self):
       if not os.path.exists('settings'):
          return 
       settings = pickle.load(open('settings', 'rb'))
       self.path = settings['filepath']
+      self.notes = settings['notes']
 
       if settings['filepath']:
          opn = FileOpener(settings['filepath'])
@@ -216,12 +251,14 @@ class Window(qtwidgets.QMainWindow):
          cursor = self.textarea.textCursor()
          cursor.setPosition(settings['cursor'])
          self.textarea.setTextCursor(cursor)
+         self.scroll_percentage()
 
       self.combo.setCurrentText(settings['language'])
       self.font = settings['font']
 
    def save(self):
-      settings = {'filepath': self.path, 'cursor': self.textarea.textCursor().position(), 'language': self.combo.currentText(), 'font': self.font}
+      self.scroll_percentage()
+      settings = {'filepath': self.path, 'cursor': self.textarea.textCursor().position(), 'language': self.combo.currentText(), 'font': self.font, 'notes': self.notearea.toPlainText()}
       pickle.dump(settings, open('settings', 'wb'))
 
    def fontsizeplus(self):
