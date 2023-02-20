@@ -11,6 +11,7 @@ class EpubReader:
         self.path = path
 
     def reader(self):
+        '''read epub chapters'''
         book = epub.read_epub(self.path)
         chapters = []
         for item in book.get_items():
@@ -20,6 +21,7 @@ class EpubReader:
 
     @staticmethod
     def chap2text(chap):
+        '''getting text from chapters'''
         blacklist = ['[document]', 'noscript', 'header', 'html', 'meta', 'head', 'input', 'script']
         output = ''
         soup = BeautifulSoup(chap, 'html.parser')
@@ -30,6 +32,7 @@ class EpubReader:
         return output
 
     def convert(self):
+        '''main reading method'''
         res = ''
         chaps = self.reader()
         for chap in chaps:
@@ -38,10 +41,12 @@ class EpubReader:
 
 
 class FileOpener:
+    """The umbrella class for opening"""
     def __init__(self, path):
         self.path = path
 
     def txtread(self):
+        '''if txt'''
         try:
             with open(self.path, 'r', encoding='utf8') as file:
                 return file.read()
@@ -49,6 +54,7 @@ class FileOpener:
             return 'Encoding'
 
     def docxread(self):
+        '''if docx'''
         doc = Document(self.path)
         text = ''
         for para in doc.paragraphs:
@@ -56,10 +62,12 @@ class FileOpener:
         return text
 
     def epubread(self):
+        '''if epub'''
         reader = EpubReader(self.path)
         return reader.convert()
 
     def pdfread(self):
+        '''if pdf'''
         try:
             text = extract_text(self.path)
         except:
@@ -67,6 +75,7 @@ class FileOpener:
         return text
 
     def ooopen(self):
+        '''choose your fighter'''
         if not os.path.exists(self.path):
             return 'REMOVED'
         if self.path.endswith('.txt'):

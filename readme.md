@@ -1,4 +1,4 @@
-# Overseleser 1.10
+# Overseleser 1.20
 
 (Oversette + leser)
 
@@ -26,6 +26,8 @@ This is a small GUI program to read books in foreign languages and to get intera
 - You may choose source language out of ~ 15 languages
 - Destination language will be most probably English
 - There is a note area where you can write your notes - they get saved with the rest
+- You can create automatic dictionaries and add your words
+- The dictionary can be viewed in a separate window or printed as txt file
 - You may copy selected text and paste it anywhere you want
 - There are hotkeys!
 
@@ -47,3 +49,5 @@ v.0.95 - fixed the bug with failed formats, made the window resizeable
 v.1.00 - added the ability to remember window size; added background to text window; added custom font (you can't change it)
 
 v.1.10 - added note ares
+
+v.1.20 - added dictionaries
