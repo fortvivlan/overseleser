@@ -4,6 +4,8 @@
 
 This is a small GUI program to read books in foreign languages and to get interactive translations from Google Translate. I made it for my own use.
 
+<img src="https://github.com/fortvivlan/overseleser/blob/main/img/01.PNG"  width="800">
+
 ### Dependencies:
 
 	pyqt5
@@ -28,6 +30,9 @@ This is a small GUI program to read books in foreign languages and to get intera
 - There is a note area where you can write your notes - they get saved with the rest
 - You can create automatic dictionaries and add your words
 - The dictionary can be viewed in a separate window or printed as txt file
+
+<img src="https://github.com/fortvivlan/overseleser/blob/main/img/02.PNG"  width="400">
+
 - You may copy selected text and paste it anywhere you want
 - There are hotkeys!
 
