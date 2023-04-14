@@ -285,7 +285,7 @@ class Window(qtwidgets.QMainWindow):
       text = cursor.selectedText()
       # not the best way to do it but else we may add a wrong translation or an empty string
       translation = oversetter(text, LANGLIST[self.combo.currentText()])
-      if translation == 'LONG':
+      if translation == '&LONG':
          qtwidgets.QMessageBox.about(self, 'Error', 'Your text is too long!')
       else:
          self.currentdict.additem(text.strip().lower(), translation.lower())
@@ -295,6 +295,11 @@ class Window(qtwidgets.QMainWindow):
       if self.currentdict != None and self.currentdict.data != {}:
          self.dictbrowser = DictBrowser(self.currentdict.data, self.combo.currentText())
          self.dictbrowser.show()
+         self.dictbrowser.moddict.connect(self.receive_data)
+
+   @pyqtSlot(dict)
+   def receive_data(self, data):
+      self.currentdict.data = data
 
    def saveDict(self):
       '''Saving bin'''
@@ -352,7 +357,7 @@ class Window(qtwidgets.QMainWindow):
       cursor = self.textarea.textCursor()
       text = cursor.selectedText()
       translation = oversetter(text, LANGLIST[self.combo.currentText()])
-      if translation == 'LONG':
+      if translation == '&LONG':
          qtwidgets.QMessageBox.about(self, 'Error', 'Your text is too long!')
       else:
          self.translation.clear()
@@ -437,6 +442,7 @@ class Window(qtwidgets.QMainWindow):
 
    def closeEvent(self, e):
       '''Write window size and position to config file'''
+      self.saveDict()
       self.settings.setValue("size", self.size())
       self.settings.setValue("pos", self.pos())
 

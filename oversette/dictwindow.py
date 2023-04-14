@@ -26,8 +26,10 @@ class DictWindow(qtwidgets.QWidget):
 
 class DictBrowser(qtwidgets.QWidget):
     '''A GUI window for browsing dict'''
+    moddict = qtcore.pyqtSignal(dict)
     def __init__(self, data, lang):
         self.data = data 
+        self.datasorted = list(enumerate(sorted(self.data)))
         super().__init__()
         self.setWindowTitle(f'Dictionary for {lang}')
         self.setWindowIcon(qtgui.QIcon('oversette/resources/icons/book.ico'))
@@ -44,7 +46,7 @@ class DictBrowser(qtwidgets.QWidget):
         self.dictlist.setRowCount(len(self.data))
         self.dictlist.setColumnCount(2)
         self.dictlist.setHorizontalHeaderLabels(columns)
-        for idx, key in enumerate(sorted(self.data)):
+        for idx, key in self.datasorted:
             self.dictlist.setItem(idx, 0, qtwidgets.QTableWidgetItem(key))
             self.dictlist.setItem(idx, 1, qtwidgets.QTableWidgetItem(', '.join(sorted(self.data[key]))))
         self.dictlist.horizontalHeader().setStretchLastSection(True)
@@ -52,3 +54,25 @@ class DictBrowser(qtwidgets.QWidget):
         self.dictlist.verticalHeader().setVisible(False)
         self.layout.addWidget(self.dictlist)
         self.setLayout(self.layout)
+
+        self.dictlist.setContextMenuPolicy(qtcore.Qt.CustomContextMenu)
+        self.dictlist.customContextMenuRequested.connect(self.on_customContextMenuRequested)
+
+    @qtcore.pyqtSlot(qtcore.QPoint)
+    def on_customContextMenuRequested(self, pos):
+        it = self.dictlist.itemAt(pos)
+        if it is None: return
+        c = self.dictlist.currentRow()
+
+        menu = qtwidgets.QMenu()
+        delete_row_action = menu.addAction("Delete entry")
+        action = menu.exec_(self.dictlist.viewport().mapToGlobal(pos))
+        if action == delete_row_action:
+            self.dictlist.removeRow(c)
+            keyfordel = self.datasorted[c][1]
+            del self.data[keyfordel]
+            self.datasorted = list(enumerate(sorted(self.data)))
+
+    def closeEvent(self, e):
+        self.moddict.emit(self.data)
+        e.accept()

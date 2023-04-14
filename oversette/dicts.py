@@ -24,7 +24,8 @@ class Dictionary:
 
     def additem(self, entry, translation):
         if entry in self.data:
-            self.data[entry].add(translation)
+            if translation != "Google Translate doesn't respond" and translation not in self.data[entry]:
+                self.data[entry].add(translation)
         else:
             self.data[entry] = {translation}
     
