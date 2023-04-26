@@ -288,7 +288,9 @@ class Window(qtwidgets.QMainWindow):
       if translation == '&LONG':
          qtwidgets.QMessageBox.about(self, 'Error', 'Your text is too long!')
       else:
-         self.currentdict.additem(text.strip().lower(), translation.lower())
+         addword = self.currentdict.additem(text.strip().lower(), translation.lower())
+         if addword:
+            qtwidgets.QMessageBox.about(self, 'Error', 'Google error')
 
    def viewDict(self):
       '''Make GUI window for viewing your dict'''

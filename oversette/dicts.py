@@ -23,11 +23,14 @@ class Dictionary:
         pickle.dump(self.data, open(self.path, 'wb'))
 
     def additem(self, entry, translation):
-        if entry in self.data:
-            if translation != "Google Translate doesn't respond" and translation not in self.data[entry]:
-                self.data[entry].add(translation)
+        if translation != "google translate doesn't respond":
+            if entry in self.data:
+                if translation not in self.data[entry]:
+                    self.data[entry].add(translation)
+            else:
+                self.data[entry] = {translation}
         else:
-            self.data[entry] = {translation}
+            return 'Google error'
     
     def printdict(self):
         if not os.path.exists('dicts'):
