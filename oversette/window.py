@@ -43,8 +43,16 @@ class External(qtcore.QObject):
    def convert(self, filepath):
       global res
       opn = FileOpener(filepath)
-      res = opn.ooopen()
-      self.converted.emit(res)
+      self.finished.emit()
+
+class Sound(qtcore.QObject):
+   '''A class for processing pdf and epub separately from GUI:
+   if you don't have a separate thread for this, your OS will think that your program froze
+   '''
+   finished = qtcore.pyqtSignal()
+
+   def pronounce(self, soundclass, text):
+      soundclass.playsound(text)
       self.finished.emit()
 
 class Window(qtwidgets.QMainWindow):
@@ -382,7 +390,20 @@ class Window(qtwidgets.QMainWindow):
       '''play sound'''
       cursor = self.textarea.textCursor()
       text = cursor.selectedText()
-      self.sound.playsound(text)
+      self.thread = self.createSoundThread(text)
+      self.thread.start()
+      # self.sound.playsound(text)
+
+   def createSoundThread(self, text):
+      '''create a thread for playing sound'''
+      thread = qtcore.QThread()
+      worker = Sound()
+      worker.moveToThread(thread)
+      thread.started.connect(partial(worker.pronounce, self.sound, text))
+      worker.finished.connect(thread.quit)
+      worker.finished.connect(worker.deleteLater)
+      thread.finished.connect(thread.deleteLater)
+      return thread
 
    def copypaste(self):
       '''copy selection'''
