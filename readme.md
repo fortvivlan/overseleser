@@ -1,4 +1,4 @@
-# Overseleser 1.20
+# Overseleser 1.30
 
 (Oversette + leser)
 
@@ -14,6 +14,9 @@ This is a small GUI program to read books in foreign languages and to get intera
     EbookLib
     pdfminer.six
     python-docx
+	pyaudio
+	gtts
+	playsound==1.2.2
 
 ### What it can:
 
@@ -25,6 +28,7 @@ This is a small GUI program to read books in foreign languages and to get intera
 - Save currently opened file, chosen language, cursor position and font size
 - Increase and decrease font size
 - Convert supported formats to .txt and store in "books" folder
+- Read words and sentences aloud
 - You may choose source language out of ~ 15 languages
 - Destination language will be most probably English
 - There is a note area where you can write your notes - they get saved with the rest
@@ -56,3 +60,5 @@ v.1.00 - added the ability to remember window size; added background to text win
 v.1.10 - added note ares
 
 v.1.20 - added dictionaries
+
+v.1.30 - added gTTS voiceover

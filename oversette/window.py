@@ -9,6 +9,7 @@ from oversette.openfile import FileOpener
 from oversette.oversetter import oversetter
 from oversette.dicts import Dictionary
 from oversette.dictwindow import DictWindow, DictBrowser
+from oversette.sound import SoundPlayer
 
 
 # list of available languages
@@ -53,6 +54,7 @@ class Window(qtwidgets.QMainWindow):
       self.settings = qtcore.QSettings('Alliot', 'Overseleser') # to remember window size and position
       self.resize(self.settings.value("size", qtcore.QSize(1250, 600))) # initial size
       self.move(self.settings.value("pos", qtcore.QPoint(50, 50))) # initial position
+      self.filesize = 0
       # main widget
       wid = qtwidgets.QWidget(self)
       self.setCentralWidget(wid)
@@ -108,6 +110,8 @@ class Window(qtwidgets.QMainWindow):
       self.translation.setFont(f)
       self.notearea.setFont(f)
       self.notearea.setPlainText(self.notes)
+      self.sound = SoundPlayer(LANGLIST[self.combo.currentText()])
+
 
    def _createMenuBar(self):
       '''Creating menus: File, Edit, View and Dictionaries'''
@@ -218,6 +222,12 @@ class Window(qtwidgets.QMainWindow):
       self.delnoteAction.setShortcut(qtgui.QKeySequence.Delete)
       self.delnoteAction.setIcon(qtgui.QIcon('oversette/resources/icons/delete.png'))
 
+      # get sound
+      self.playsoundAction = qtwidgets.QAction('&Pronounce')
+      self.playsoundAction.setText('&Pronounce')
+      self.playsoundAction.triggered.connect(self.pronounce)
+      self.playsoundAction.setIcon(qtgui.QIcon('oversette/resources/icons/pronounce.png'))
+
       # the following actions are for dictionaries
       self.createDictAction = qtwidgets.QAction('&Create new dictionary')
       self.createDictAction.setText('&Create new dictionary')
@@ -255,15 +265,16 @@ class Window(qtwidgets.QMainWindow):
       self.textarea.setContextMenuPolicy(qtcore.Qt.ActionsContextMenu)
       self.textarea.addAction(self.translAction)
       self.textarea.addAction(self.addDictAction)
+      self.textarea.addAction(self.playsoundAction)
 
    def createDict(self):
       '''We create a dictionary'''
       self.dictWin = DictWindow() # the class for qlineedit to enter dict name
       self.dictWin.show()
-      self.dictWin.choice.connect(self.receive_data)
+      self.dictWin.choice.connect(self.receive_name)
 
    @pyqtSlot(str)
-   def receive_data(self, choice):
+   def receive_name(self, choice):
       '''We receive dict name from user'''
       self.currentdict = Dictionary(self.combo.currentText())
       self.currentdict.newdict(choice)
@@ -324,8 +335,10 @@ class Window(qtwidgets.QMainWindow):
       else:
          self.textarea.clear()
          self.textarea.insertPlainText(res)
+         self.filesize = len(res)
          name = os.path.splitext(os.path.basename(self.path))[0]
          self.setWindowTitle(f"Overseleser: {name}")
+         self.sound = SoundPlayer(LANGLIST[self.combo.currentText()])
 
    def createThread(self, filepath):
       '''create a thread for processing epub or pdf'''
@@ -365,6 +378,12 @@ class Window(qtwidgets.QMainWindow):
          self.translation.clear()
          self.translation.insertPlainText(translation)
 
+   def pronounce(self):
+      '''play sound'''
+      cursor = self.textarea.textCursor()
+      text = cursor.selectedText()
+      self.sound.playsound(text)
+
    def copypaste(self):
       '''copy selection'''
       self.textarea.copy()
@@ -376,8 +395,10 @@ class Window(qtwidgets.QMainWindow):
 
    def scroll_percentage(self):
       '''compute scroll position'''
-      vsb = self.textarea.verticalScrollBar()
-      ratio = round((vsb.value() / (vsb.maximum() or 1)) * 100, 2)
+      # vsb = self.textarea.verticalScrollBar()
+      cursorpos = self.textarea.textCursor().position()
+      # ratio = round((vsb.value() / (vsb.maximum() or 1)) * 100, 2)
+      ratio = round(cursorpos / (self.filesize or 1 ) * 100, 2)
       self.percentage.setText(str(ratio))
 
    def _getsaved(self):
