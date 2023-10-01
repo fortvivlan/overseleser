@@ -53,12 +53,12 @@ I dunno, I'm too lazy
 
 #### Updates
 
-v.0.95 - fixed the bug with failed formats, made the window resizeable
-
-v.1.00 - added the ability to remember window size; added background to text window; added custom font (you can't change it)
-
-v.1.10 - added note ares
+v.1.30 - added gTTS voiceover
 
 v.1.20 - added dictionaries
 
-v.1.30 - added gTTS voiceover
+v.1.10 - added note area
+
+v.1.00 - added the ability to remember window size; added background to text window; added custom font (you can't change it)
+
+v.0.95 - fixed the bug with failed formats, made the window resizeable
