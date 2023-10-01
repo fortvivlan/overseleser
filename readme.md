@@ -4,7 +4,7 @@
 
 This is a small GUI program to read books in foreign languages and to get interactive translations from Google Translate. I made it for my own use.
 
-<img src="https://github.com/fortvivlan/overseleser/blob/main/img/01.PNG"  width="800">
+<img src="https://github.com/fortvivlan/overseleser/blob/main/img/overseleser.PNG"  width="800">
 
 ### Dependencies:
 
