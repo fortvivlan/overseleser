@@ -43,6 +43,8 @@ class External(qtcore.QObject):
    def convert(self, filepath):
       global res
       opn = FileOpener(filepath)
+      res = opn.ooopen()
+      self.converted.emit(res)
       self.finished.emit()
 
 class Sound(qtcore.QObject):
@@ -429,8 +431,9 @@ class Window(qtwidgets.QMainWindow):
       settings = pickle.load(open('settings', 'rb'))
       self.path = settings['filepath']
       self.notes = settings['notes']
-      self.currentdict = Dictionary(settings['language'])
-      self.currentdict.opendict(settings['dictpath'])
+      if settings['dictpath']:
+         self.currentdict = Dictionary(settings['language'])
+         self.currentdict.opendict(settings['dictpath'])
 
       if settings['filepath']:
          opn = FileOpener(settings['filepath'])
@@ -451,12 +454,16 @@ class Window(qtwidgets.QMainWindow):
    def save(self):
       '''save settings'''
       self.scroll_percentage()
+      if self.currentdict:
+         dictpath = self.currentdict.path
+      else:
+         dictpath = None
       settings = {'filepath': self.path, 
                   'cursor': self.textarea.textCursor().position(), 
                   'language': self.combo.currentText(), 
                   'font': self.font, 
                   'notes': self.notearea.toPlainText(), 
-                  'dictpath': self.currentdict.path}
+                  'dictpath': dictpath}
       pickle.dump(settings, open('settings', 'wb'))
 
    def fontsizeplus(self):
