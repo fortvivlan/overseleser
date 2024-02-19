@@ -1,0 +1,9 @@
+pyqt5
+beautifulsoup4
+EbookLib
+pdfminer.six
+python-docx
+pyaudio
+gtts
+googletrans==3.1.0a0
+playsound==1.2.2
