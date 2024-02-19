@@ -48,7 +48,7 @@ class External(qtcore.QObject):
       self.finished.emit()
 
 class Sound(qtcore.QObject):
-   '''A class for processing pdf and epub separately from GUI:
+   '''A class for reading the text aloud:
    if you don't have a separate thread for this, your OS will think that your program froze
    '''
    finished = qtcore.pyqtSignal()
@@ -65,62 +65,67 @@ class Window(qtwidgets.QMainWindow):
       self.resize(self.settings.value("size", qtcore.QSize(1250, 600))) # initial size
       self.move(self.settings.value("pos", qtcore.QPoint(50, 50))) # initial position
       self.filesize = 0
-      # main widget
-      wid = qtwidgets.QWidget(self)
-      self.setCentralWidget(wid)
-      # layout = grid
-      grid = qtwidgets.QGridLayout()
-      wid.setLayout(grid)
-
-      self.setWindowTitle("Overseleser")
-      self.setWindowIcon(qtgui.QIcon('oversette/resources/icons/book.png'))
-      self.setStyleSheet('background-color: #efeae1;')
-      # create actions, menus and toolbars
-      self._createActions()
-      self._createMenuBar()
-      self._createToolBars()
-
-      # setting up font family and size
-      fontId = qtgui.QFontDatabase.addApplicationFont("oversette/resources/maiola.ttf")
-      if fontId < 0:
-         print('font not loaded')
-      families = qtgui.QFontDatabase.applicationFontFamilies(fontId)
-      # text area is for the book itself
-      self.textarea = qtwidgets.QPlainTextEdit(self)
-      self.textarea.setStyleSheet(STYLESHEET_TEXT)
-      self.textarea.setReadOnly(True)
-      # note area is for writing down notes - it's editable
-      self.notearea = qtwidgets.QPlainTextEdit(self)
-      self.notearea.setStyleSheet(STYLESHEET_NOTE)
-      # translation area gets Google translations
-      self.translation = qtwidgets.QPlainTextEdit(self)
-      self.translation.setStyleSheet(STYLESHEET_NOTE)
-      self.translation.setReadOnly(True)
-      # filler is just a pic
-      self.filler = qtwidgets.QLabel('Label')
-      self.filler.setPixmap(qtgui.QPixmap("oversette/resources/book.png"))
-      self.filler.setAlignment(qtcore.Qt.AlignCenter)
-      # adding widgets to grid
-      grid.addWidget(self.translation, 1, 2, 1, 4)
-      grid.addWidget(self.textarea, 1, 1)
-      grid.addWidget(self.notearea, 2, 1, 4, 1)
-      grid.addWidget(self.filler, 2, 2, 4, 4)
-      self._createContextMenu()
-      # handling important attributes
-      self.path = None  # path to book
-      self.notes = '' # notes
       self.currentdict = None # dictionary
-      self.font = None # font size
-      # trying to get settings
-      self._getsaved()
-      if not self.font:
-         self.font = 12
-      f = qtgui.QFont(families[0], self.font)
-      self.textarea.setFont(f)
-      self.translation.setFont(f)
-      self.notearea.setFont(f)
-      self.notearea.setPlainText(self.notes)
-      self.sound = SoundPlayer(LANGLIST[self.combo.currentText()])
+      self.initUI()
+
+   def initUI(self):
+         # main widget
+         wid = qtwidgets.QWidget(self)
+         self.setCentralWidget(wid)
+         # layout = grid
+         grid = qtwidgets.QGridLayout()
+         wid.setLayout(grid)
+
+         self.setWindowTitle("Overseleser")
+         self.setWindowIcon(qtgui.QIcon('oversette/resources/icons/book.png'))
+         self.setStyleSheet('background-color: #efeae1;')
+         # create actions, menus and toolbars
+         self._createActions()
+         self._createMenuBar()
+         self._createToolBars()
+
+         # setting up font family and size
+         fontId = qtgui.QFontDatabase.addApplicationFont("oversette/resources/maiola.ttf")
+         if fontId < 0:
+            print('font not loaded')
+         families = qtgui.QFontDatabase.applicationFontFamilies(fontId)
+         # text area is for the book itself
+         self.textarea = qtwidgets.QPlainTextEdit(self)
+         self.textarea.setStyleSheet(STYLESHEET_TEXT)
+         self.textarea.setReadOnly(True)
+         # note area is for writing down notes - it's editable
+         self.notearea = qtwidgets.QPlainTextEdit(self)
+         self.notearea.setStyleSheet(STYLESHEET_NOTE)
+         # translation area gets Google translations
+         self.translation = qtwidgets.QPlainTextEdit(self)
+         self.translation.setStyleSheet(STYLESHEET_NOTE)
+         self.translation.setReadOnly(True)
+         # filler is just a pic
+         self.filler = qtwidgets.QLabel('Label')
+         self.filler.setPixmap(qtgui.QPixmap("oversette/resources/book.png"))
+         self.filler.setAlignment(qtcore.Qt.AlignCenter)
+         # adding widgets to grid
+         grid.addWidget(self.translation, 1, 2, 1, 4)
+         grid.addWidget(self.textarea, 1, 1)
+         grid.addWidget(self.notearea, 2, 1, 4, 1)
+         grid.addWidget(self.filler, 2, 2, 4, 4)
+         self._createContextMenu()
+         # handling important attributes
+         self.path = None  # path to book
+         self.notes = '' # notes
+         self.font = None # font size
+         # trying to get settings
+         self._getsaved()
+         if not self.font:
+            self.font = 12
+         f = qtgui.QFont(families[0], self.font)
+         self.textarea.setFont(f)
+         self.translation.setFont(f)
+         self.notearea.setFont(f)
+         self.notearea.setPlainText(self.notes)
+         self.sound = SoundPlayer(LANGLIST[self.combo.currentText()])
+         if self.combo.currentText() == 'Slovenian':
+            self.playsoundAction.setIcon(qtgui.QIcon('oversette/resources/icons/pronounceunavailable.png'))
 
 
    def _createMenuBar(self):
@@ -144,11 +149,16 @@ class Window(qtwidgets.QMainWindow):
       dictMenu.addAction(self.saveDictAction)
       dictMenu.addAction(self.viewDictAction)
       dictMenu.addAction(self.printDictAction)
+      dictMenu.addAction(self.closeDictAction)
 
    def _createToolBars(self):
       '''Creating toolbars: Language, Dictionaries'''
       langToolBar = self.addToolBar("Language")
       self.combo = qtwidgets.QComboBox()
+      if self.currentdict:
+         self.dictpanel = qtwidgets.QLabel(self.currentdict.lang)
+      else:
+         self.dictpanel = qtwidgets.QLabel('No dictionary')
       self.percentage = qtwidgets.QLabel('0') # scroll percentage
       # spacer allows percentage to be shown on the right side
       spacer = qtwidgets.QWidget()
@@ -161,6 +171,8 @@ class Window(qtwidgets.QMainWindow):
       dictToolBar.addAction(self.saveDictAction)
       dictToolBar.addAction(self.viewDictAction)
       dictToolBar.addAction(self.printDictAction)
+      dictToolBar.addAction(self.closeDictAction)
+      dictToolBar.addWidget(self.dictpanel)
       dictToolBar.addWidget(spacer)
       dictToolBar.addWidget(self.percentage)
 
@@ -270,6 +282,11 @@ class Window(qtwidgets.QMainWindow):
       self.addDictAction.setShortcut(qtgui.QKeySequence('Ctrl+A'))
       self.addDictAction.setIcon(qtgui.QIcon('oversette/resources/icons/addword.png'))
 
+      self.closeDictAction = qtwidgets.QAction('&Close dictionary')
+      self.closeDictAction.setText('&Close dictionary')
+      self.closeDictAction.triggered.connect(self.closeDict)
+      self.closeDictAction.setIcon(qtgui.QIcon('oversette/resources/icons/closedict.png'))
+
    def _createContextMenu(self):
       '''Creating context menus: for translating and adding words to dict'''
       self.textarea.setContextMenuPolicy(qtcore.Qt.ActionsContextMenu)
@@ -288,6 +305,7 @@ class Window(qtwidgets.QMainWindow):
       '''We receive dict name from user'''
       self.currentdict = Dictionary(self.combo.currentText())
       self.currentdict.newdict(choice)
+      self.dictpanel.setText(self.currentdict.lang)
 
    def openDict(self):
       '''Open an existing dict'''
@@ -296,6 +314,15 @@ class Window(qtwidgets.QMainWindow):
       if filepath:
          self.currentdict = Dictionary(self.combo.currentText()) # a hole: if we open a dict for another language?
          self.currentdict.opendict(filename[0])
+         self.dictpanel.setText(self.currentdict.lang)
+
+   def closeDict(self):
+      '''Close an open dict'''
+      if not self.currentdict:
+         return
+      self.saveDict()
+      self.currentdict = None 
+      self.dictpanel.setText('No dictionary')
 
    def addWordtoDict(self):
       '''Adding word to dictionary'''
@@ -349,6 +376,8 @@ class Window(qtwidgets.QMainWindow):
          name = os.path.splitext(os.path.basename(self.path))[0]
          self.setWindowTitle(f"Overseleser: {name}")
          self.sound = SoundPlayer(LANGLIST[self.combo.currentText()])
+         if self.combo.currentText() == 'Slovenian':
+            self.playsoundAction.setIcon(qtgui.QIcon('oversette/resources/icons/pronounceunavailable.png'))
 
    def createThread(self, filepath):
       '''create a thread for processing epub or pdf'''
@@ -376,6 +405,7 @@ class Window(qtwidgets.QMainWindow):
       self.path = None
       self.textarea.clear()
       self.setWindowTitle("Overseleser")
+      self.closeDict()
 
    def translate(self):
       '''get translation'''
@@ -423,6 +453,9 @@ class Window(qtwidgets.QMainWindow):
       # ratio = round((vsb.value() / (vsb.maximum() or 1)) * 100, 2)
       ratio = round(cursorpos / (self.filesize or 1 ) * 100, 2)
       self.percentage.setText(str(ratio))
+      self.sound = SoundPlayer(LANGLIST[self.combo.currentText()])
+      if self.combo.currentText() == 'Slovenian':
+         self.playsoundAction.setIcon(qtgui.QIcon('oversette/resources/icons/pronounceunavailable.png'))
 
    def _getsaved(self):
       '''load settings: filepath to book, notes, language, dictpath and cursor position'''
@@ -434,6 +467,7 @@ class Window(qtwidgets.QMainWindow):
       if settings['dictpath']:
          self.currentdict = Dictionary(settings['language'])
          self.currentdict.opendict(settings['dictpath'])
+         self.dictpanel.setText(self.currentdict.lang)
 
       if settings['filepath']:
          opn = FileOpener(settings['filepath'])

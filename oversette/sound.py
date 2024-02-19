@@ -11,14 +11,17 @@ class SoundPlayer:
         self.lang = lang 
 
     def _getword(self, word):
-        sound = gTTS(word, lang=self.lang)
-        sound.save(self.filepath)
+        if word != '':
+            sound = gTTS(word, lang=self.lang)
+            sound.save(self.filepath)
     
     def _playword(self):
         fullpath = os.path.abspath(self.filepath)
-        playsound(fullpath)
-        os.remove(self.filepath)
+        if os.path.exists(fullpath):
+            playsound(fullpath)
+            os.remove(self.filepath)
 
     def playsound(self, word):
-        self._getword(word)
-        self._playword()
+        if self.lang != 'sl':
+            self._getword(word)
+            self._playword()
